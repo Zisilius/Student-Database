@@ -6,35 +6,40 @@ typedef  std::map<std::string, std::map<std::string, std::string>> smap;
 
 int splitLine(const std::string&, const char&, std::string[]);
 bool mapLine(const std::string& s, smap& m);
-void outputDb(std::ostream& os, smap& m);
+void output_db(std::ostream& os, smap& m);
+int mkdb(const std::string&, smap&);
 
 int main()
 {
-  std::fstream file("student.db");
+  smap table;
+
+  if (mkdb("student.db", table))
+    std::cerr << "There is a problem with assembling the database" << std::endl;
+
+  output_db(std::cout, table);
+
+  return 0;
+}
+
+int mkdb(const std::string& fileName, smap& m)
+{
+  std::fstream file(fileName);
 
   if (!file) {
-    std::cerr << "The file is fucked" << std::endl;
     return 1;
   }
 
-  smap table;
   std::string temp;
   while (!file.eof()) {
     std::getline(file, temp);
     if (temp.size() == 0)
       continue;
-//    std::cout << temp << std::endl;
-    if (mapLine(temp, table)) {
-      std::cerr << "There is a problem with mapLine" << std::endl;
+    if (!mapLine(temp, m)) {
       return 1;
     }
   }
 
   file.close();
-
-//  std::cout << table["Kevin Morris"]["email"] << std::endl;
-  outputDb(std::cout, table);
-
   return 0;
 }
 
@@ -62,7 +67,7 @@ bool mapLine(const std::string& s, smap& m)
   return true;
 }
 
-void outputDb(std::ostream& os, smap& m)
+void output_db(std::ostream& os, smap& m)
 {
   for (smap::iterator iter = m.begin(); iter != m.end(); iter++) {
     os << iter->first << ":" << std::endl;
