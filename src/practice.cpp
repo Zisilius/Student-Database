@@ -1,22 +1,39 @@
 #include <iostream>
 #include <fstream>
 #include <map>
+#define TABLE_SIZE 4
 
 typedef  std::map<std::string, std::map<std::string, std::string>> smap;
 
 int splitLine(const std::string&, const char&, std::string[]);
-bool mapLine(const std::string& s, smap& m);
-void output_db(std::ostream& os, smap& m);
+int output_db(std::ostream& os, smap& m);
 int mkdb(const std::string&, smap&);
+
+template <typename T>
+bool mapLine(const std::string& s, T& m)
+{
+  std::string arr[TABLE_SIZE];
+  if (splitLine(s, ':', arr) != TABLE_SIZE)
+    return false;
+  m[arr[0]]["email"] = arr[1];
+  m[arr[0]]["title"] = arr[2];
+  m[arr[0]]["date"] = arr[3];
+  return true;
+}
 
 int main()
 {
   smap table;
 
-  if (mkdb("student.db", table))
-    std::cerr << "There is a problem with assembling the database" << std::endl;
+  if (mkdb("student.db", table)) {
+    std::cerr << "Error: problem with assembling the database" << std::endl;
+    return 1;
+  }
 
-  output_db(std::cout, table);
+  if (output_db(std::cout, table)) {
+    std::cerr << "Error: can't output the database" << std::endl;
+    return 1;
+  }
 
   return 0;
 }
@@ -34,9 +51,8 @@ int mkdb(const std::string& fileName, smap& m)
     std::getline(file, temp);
     if (temp.size() == 0)
       continue;
-    if (!mapLine(temp, m)) {
+    if (!mapLine(temp, m))
       return 1;
-    }
   }
 
   file.close();
@@ -53,26 +69,19 @@ int splitLine(const std::string& s, const char& c, std::string arr[])
   }
   arr[index++] = s.substr(old, s.size() - old);
 
-  return index ;
+  return index;
 }
 
-bool mapLine(const std::string& s, smap& m)
+int output_db(std::ostream& os, smap& m)
 {
-  std::string arr[4];
-  if (splitLine(s, ':', arr) != 4)
-    return false;
-  m[arr[0]]["email"] = arr[1];
-  m[arr[0]]["comment"] = arr[2];
-  m[arr[0]]["date"] = arr[3];
-  return true;
-}
+  if (m.empty())
+    return 1;
 
-void output_db(std::ostream& os, smap& m)
-{
   for (smap::iterator iter = m.begin(); iter != m.end(); iter++) {
     os << iter->first << ":" << std::endl;
     for (std::map<std::string, std::string>::iterator j= m[iter->first].begin();
          j != m[iter->first].end(); j++) 
       os << "\t" << j->first << " -> " << j->second << std::endl;
   }
+  return 0;
 }
